@@ -1,13 +1,8 @@
-use std::fs;
-
-fn parse_input() -> Vec<Vec<char>> {
-    let input = "input/input.txt";
-    let contents = fs::read_to_string(input).unwrap();
-
-    let grid: Vec<Vec<char>> = contents.lines().map(
+#[aoc_generator(day3)]
+pub fn generator(input: &str) -> Vec<Vec<char>> {
+    input.lines().map(
         |x| x.chars().collect()
-    ).collect();
-    grid
+    ).collect()
 }
 
 fn risky_slope(grid: &Vec<Vec<char>>, right: usize, down: usize) -> usize {
@@ -29,26 +24,16 @@ fn risky_slope(grid: &Vec<Vec<char>>, right: usize, down: usize) -> usize {
     trees
 }
 
-fn day_03_1() {
-    let grid = parse_input();
-    let trees = risky_slope(&grid, 3, 1);
-
-    println!("part1: {:#?}", trees);
+#[aoc(day3, part1)] 
+fn part1(grid: &Vec<Vec<char>>) -> usize {
+    risky_slope(&grid, 3, 1)
 }
 
-fn day_03_2() {
-    let grid = parse_input();
-
+#[aoc(day3, part2)] 
+fn part2(grid: &Vec<Vec<char>>) -> usize {
     let mut trees = risky_slope(&grid, 1, 1);
     trees *= risky_slope(&grid, 3, 1);
     trees *= risky_slope(&grid, 5, 1);
     trees *= risky_slope(&grid, 7, 1);
-    trees *= risky_slope(&grid, 1, 2);
-
-    println!("part2: {:#?}", trees);
-}
-
-fn main() {
-    day_03_1();
-    day_03_2();
+    trees * risky_slope(&grid, 1, 2)
 }

@@ -1,16 +1,11 @@
-use std::fs;
 use std::collections::HashMap;
 use regex::Regex;
 
-//fn read_input(mut filedata: &String) -> () {
-//    let input = "input/input.txt";
-//    filedata = fs::read_to_string(input).unwrap();
-//}
-
-fn parse_input(contents: &str) -> Vec<HashMap<&str, &str>> {
-    let mut dict: HashMap<&str, &str> = HashMap::new();
-    let mut list: Vec<HashMap<&str, &str>> = Vec::new();
-    for line in contents.lines() {
+#[aoc_generator(day4)]
+pub fn generator(input: &str) -> Vec<HashMap<String, String>> {
+    let mut dict: HashMap<String, String> = HashMap::new();
+    let mut list: Vec<HashMap<String, String>> = Vec::new();
+    for line in input.lines() {
         if line.trim().is_empty() {
             list.push(dict);
             dict = HashMap::new();
@@ -19,16 +14,15 @@ fn parse_input(contents: &str) -> Vec<HashMap<&str, &str>> {
 
         line.split(" ").map(|x| {
             let mut split2 = x.splitn(2, ":");
-            (split2.next().unwrap(), split2.next().unwrap())
+            (split2.next().unwrap().to_owned(),
+             split2.next().unwrap().to_owned())
         }).for_each(|(k,v)| {dict.insert(k, v); ()});
     }
     list.push(dict);
-    //println!("{:#?}", list);
-
     list
 }
 
-fn has_required_fields(passport: &&HashMap<&str, &str>) -> bool {
+fn has_required_fields(passport: &&HashMap<String, String>) -> bool {
     (passport.keys().count() == 8)
     || ((passport.keys().count() == 7)
             && passport.keys().find(|y| **y == "cid").is_none()
@@ -73,18 +67,13 @@ fn check_pid(input: &str) -> bool {
     re.find(input).is_some()
 }
 
-
-fn day04_1() {
-    let input = "input/input.txt";
-    let contents = fs::read_to_string(input).unwrap();
-    let parsed = parse_input(&contents);
-
-    let valid = parsed.iter().filter(has_required_fields).count();
-
-    println!("Valid passports {}", valid);
+#[aoc(day4, part1)]
+pub fn part1(input: &Vec<HashMap<String, String>>) -> usize {
+    input.iter().filter(has_required_fields).count()
 }
 
-fn day04_2() {
+#[aoc(day4, part2)]
+pub fn part2(input: &Vec<HashMap<String, String>>) -> usize {
     assert!(check_digits("2020", 2010, 2030));
     assert!(!check_digits("2031", 2010, 2030));
     assert!(!check_digits("2009", 2010, 2030));
@@ -101,25 +90,14 @@ fn day04_2() {
     assert!(!check_pid("12345678"));
     assert!(check_pid("123456789"));
 
-    let input = "input/input.txt";
-    let contents = fs::read_to_string(input).unwrap();
-    let parsed = parse_input(&contents);
-
-    let valid = parsed.iter()
+    input.iter()
         .filter(has_required_fields)
-        .filter(|x| check_digits(x["byr"], 1920, 2002))
-        .filter(|x| check_digits(x["iyr"], 2010, 2020))
-        .filter(|x| check_digits(x["eyr"], 2020, 2030))
-        .filter(|x| check_height(x["hgt"]))
-        .filter(|x| check_hair(x["hcl"]))
-        .filter(|x| check_eyes(x["ecl"]))
-        .filter(|x| check_pid(x["pid"]))
-        .count();
-
-    println!("Valid passports {}", valid);
-}
-
-fn main() {
-    day04_1();
-    day04_2();
+        .filter(|x| check_digits(&x["byr"], 1920, 2002))
+        .filter(|x| check_digits(&x["iyr"], 2010, 2020))
+        .filter(|x| check_digits(&x["eyr"], 2020, 2030))
+        .filter(|x| check_height(&x["hgt"]))
+        .filter(|x| check_hair(&x["hcl"]))
+        .filter(|x| check_eyes(&x["ecl"]))
+        .filter(|x| check_pid(&x["pid"]))
+        .count()
 }
