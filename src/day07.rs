@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
+use counter::Counter;
 use regex::Regex;
 
 static EMPTY_BAG: &str = " bags contain no other bags.";
@@ -35,13 +36,38 @@ fn part1(input: &Bags) -> usize {
         let new: HashSet<&str> = input.iter().filter(|(_k, v)| {
             let contents: HashSet<&str> = v.keys().map(|s| &s[..]).collect();
             ! target.is_disjoint(&contents)
-        }).map(|(k,_v)| &k[..]).collect();
+        }).map(|(k,_v)| k.as_str()).collect();
         target = target.union(&new).copied().collect();
 
         if target.iter().count() == keys {
             break
         } else {
             keys = target.iter().count()
+        }
+    }
+    keys - 1
+}
+
+#[aoc(day7, part2)]
+fn part2(input: &Bags) -> usize {
+    let mut keys: usize = 0;
+    let mut totals: Counter<&str> = ["shiny_gold"].iter().copied().collect::<Counter<_>>();
+    let mut step = vec![("shiny gold", 1)];
+    loop {
+        let next_step = step.iter().flat_map(|(x, count)| {
+            (input[*x]).iter().map(move |(y, i)| (y, (count*i)))
+        }).fold(Counter::<&str>::new(), |mut c, (y,i)| {
+            c[&y.as_str()] += i;
+            c
+        });
+        totals += next_step.clone();
+
+        let next_keys = totals.iter().fold(0, |c, (_k,v)| c + v);
+        step = next_step.clone().into_map().iter().map(|(k,v)| (*k, *v)).collect();
+        if keys == next_keys {
+            break
+        } else {
+            keys = next_keys
         }
     }
     keys - 1
