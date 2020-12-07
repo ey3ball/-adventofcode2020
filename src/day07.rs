@@ -50,7 +50,7 @@ fn part1(input: &Bags) -> usize {
 
 #[aoc(day7, part2)]
 fn part2(input: &Bags) -> usize {
-    let mut keys: usize = 0;
+    let mut total_bags: usize = 0;
     let mut totals = Counter::<&str>::new();
     let mut step = vec![("shiny gold", 1)];
     loop {
@@ -62,13 +62,13 @@ fn part2(input: &Bags) -> usize {
         });
         totals += next_step.clone();
 
-        let next_keys = totals.iter().fold(0, |c, (_k,v)| c + v);
+        let next_total_bags = totals.iter().fold(0, |c, (_k,v)| c + v);
         step = next_step.clone().into_map().iter().map(|(k,v)| (*k, *v)).collect();
-        if keys == next_keys {
+        if total_bags == next_total_bags {
             break
         } else {
-            keys = next_keys
+            total_bags = next_total_bags
         }
     }
-    keys
+    total_bags
 }
