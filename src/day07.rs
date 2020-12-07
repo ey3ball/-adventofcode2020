@@ -3,48 +3,47 @@ use std::collections::HashSet;
 use counter::Counter;
 use regex::Regex;
 
-type Bags = HashMap<String, HashMap<String, usize>>;
+type Bags<'a> = HashMap<&'a str, HashMap<&'a str, usize>>;
 
-#[aoc_generator(day7)]
-pub fn generator(input: &str) -> Bags {
-    let re_contains = Regex::new(r"^([a-z ]*) bags contain (.*)").unwrap();
-    let re_contents = Regex::new(r"(\d)+ ([a-z ]*) bag[s]?[ .,]?").unwrap();
+pub fn parse<'a>(input: &'a str) -> Bags<'a> {
+    let re_container = Regex::new(r"^(?P<bag>[a-z ]*) bags contain (?P<contents>.*)").unwrap();
+    let re_contents = Regex::new(r"(?P<qty>\d)+ (?P<bag>[a-z ]*) bag[s]?[ .,]?").unwrap();
     input.lines().map(
         |line| {
-            let rule = re_contains.captures(line).unwrap();
-            let bag = &rule[1];
-            let contents = &rule[2];
-            let parsed_contents: HashMap<String, usize> =
-                re_contents.captures_iter(contents).map(|x| {
-                    (x[2].to_owned(), x[1].parse::<usize>().unwrap())
-                }).collect();
-            (bag.to_owned(), parsed_contents)
+            let container = re_container.captures(line).unwrap();
+            let parsed_contents = re_contents
+                .captures_iter(line)
+                .map(|c| (c.name("bag").unwrap().as_str(), c["qty"].parse().unwrap()))
+                .collect();
+            (container.name("bag").unwrap().as_str(), parsed_contents)
         }
     ).collect()
 }
 
 #[aoc(day7, part1)]
-fn part1(input: &Bags) -> usize {
-    let mut keys: usize = 0;
-    let mut target: HashSet<&str> = ["shiny gold"].iter().cloned().collect();
+fn part1(raw: &str) -> usize {
+    let input = parse(raw);
+    let mut target = HashSet::new();
+    target.insert("shiny gold");
     loop {
-        let new: HashSet<&str> = input.iter().filter(|(_k, v)| {
-            let contents: HashSet<&str> = v.keys().map(|s| &s[..]).collect();
-            ! target.is_disjoint(&contents)
-        }).map(|(k,_v)| k.as_str()).collect();
-        target = target.union(&new).copied().collect();
-
-        if target.iter().count() == keys {
+        let new =
+            input.keys()
+            .filter(|k| &target & &input[*k].keys().copied().collect() != HashSet::new())
+            .copied()
+            .collect();
+        if target == &target | &new {
             break
         } else {
-            keys = target.iter().count()
+            target = &target | &new
         }
     }
-    keys - 1
+    target.iter().count() - 1
 }
 
 #[aoc(day7, part2)]
-fn part2(input: &Bags) -> usize {
+fn part2(raw: &str) -> usize {
+    let input = parse(raw);
+
     let mut total_bags: usize = 0;
     let mut totals = Counter::<&str>::new();
     let mut step = vec![("shiny gold", 1)];
@@ -52,7 +51,7 @@ fn part2(input: &Bags) -> usize {
         let next_step = step.iter().flat_map(|(x, count)| {
             (input[*x]).iter().map(move |(y, i)| (y, (count*i)))
         }).fold(Counter::<&str>::new(), |mut c, (y,i)| {
-            c[&y.as_str()] += i;
+            c[y] += i;
             c
         });
         totals += next_step.clone();
