@@ -3,7 +3,6 @@ use std::collections::HashSet;
 use counter::Counter;
 use regex::Regex;
 
-static EMPTY_BAG: &str = " bags contain no other bags.";
 type Bags = HashMap<String, HashMap<String, usize>>;
 
 #[aoc_generator(day7)]
@@ -12,18 +11,14 @@ pub fn generator(input: &str) -> Bags {
     let re_contents = Regex::new(r"(\d)+ ([a-z ]*) bag[s]?[ .,]?").unwrap();
     input.lines().map(
         |line| {
-            if line.ends_with(EMPTY_BAG) {
-                (line.replace(EMPTY_BAG, ""), HashMap::new())
-            } else {
-                let rule = re_contains.captures(line).unwrap();
-                let bag = &rule[1];
-                let contents = &rule[2];
-                let parsed_contents: HashMap<String, usize> =
-                    re_contents.captures_iter(contents).map(|x| {
-                        (x[2].to_owned(), x[1].parse::<usize>().unwrap())
-                    }).collect();
-                (bag.to_owned(), parsed_contents)
-            }
+            let rule = re_contains.captures(line).unwrap();
+            let bag = &rule[1];
+            let contents = &rule[2];
+            let parsed_contents: HashMap<String, usize> =
+                re_contents.captures_iter(contents).map(|x| {
+                    (x[2].to_owned(), x[1].parse::<usize>().unwrap())
+                }).collect();
+            (bag.to_owned(), parsed_contents)
         }
     ).collect()
 }
