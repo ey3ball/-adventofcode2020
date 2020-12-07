@@ -51,7 +51,7 @@ fn part1(input: &Bags) -> usize {
 #[aoc(day7, part2)]
 fn part2(input: &Bags) -> usize {
     let mut keys: usize = 0;
-    let mut totals: Counter<&str> = ["shiny_gold"].iter().copied().collect::<Counter<_>>();
+    let mut totals = Counter::<&str>::new();
     let mut step = vec![("shiny gold", 1)];
     loop {
         let next_step = step.iter().flat_map(|(x, count)| {
@@ -70,5 +70,5 @@ fn part2(input: &Bags) -> usize {
             keys = next_keys
         }
     }
-    keys - 1
+    keys
 }
