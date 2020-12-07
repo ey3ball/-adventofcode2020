@@ -6,22 +6,17 @@ pub fn generator(input: &str) -> Vec<Vec<char>> {
 }
 
 fn risky_slope(grid: &Vec<Vec<char>>, right: usize, down: usize) -> usize {
-    let mut y: usize = 0;
-    let mut trees: usize = 0;
-
-    grid.iter().enumerate().filter_map(|(i,x)| {
-        if i % down == 0 {
-            Some(x)
-        } else {
-            None
-        }
-    }).for_each(|x| {
-        if x[y % x.len()] == '#' {
-            trees += 1
-        }
-        y += right
-    });
-    trees
+    let (t, _) = grid
+        .iter()
+        .step_by(down)
+        .fold((0,0), |(trees, y), x| {
+            if x[y % x.len()] == '#' {
+                (trees + 1, y + right)
+            } else {
+                (trees, y + right)
+            }
+        });
+    t
 }
 
 #[aoc(day3, part1)] 
@@ -31,9 +26,8 @@ fn part1(grid: &Vec<Vec<char>>) -> usize {
 
 #[aoc(day3, part2)] 
 fn part2(grid: &Vec<Vec<char>>) -> usize {
-    let mut trees = risky_slope(&grid, 1, 1);
-    trees *= risky_slope(&grid, 3, 1);
-    trees *= risky_slope(&grid, 5, 1);
-    trees *= risky_slope(&grid, 7, 1);
-    trees * risky_slope(&grid, 1, 2)
+    [(1,1),(3,1),(5,1),(7,1),(1,2)]
+        .iter()
+        .map(|(x,y)| risky_slope(grid, *x, *y))
+        .product()
 }
