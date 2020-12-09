@@ -21,3 +21,25 @@ pub fn part1(input: &Vec<u64>) -> u64 {
         checked.is_none()
     }).unwrap()
 }
+
+
+#[aoc(day9, part2)]
+pub fn part2(input: &Vec<u64>) -> u64 {
+    let target: u64 = 26796446;
+
+    let res = input.iter().copied()
+         .take_while(|&x| x != 26796446)
+         .fold(VecDeque::<u64>::new(), |mut acc, x| {
+            if acc.iter().sum::<u64>() == target {
+                return acc
+            }
+
+            acc.push_back(x);
+            while acc.iter().sum::<u64>() > target {
+                acc.pop_front();
+            }
+            acc
+         });
+
+    res.iter().min().unwrap() + res.iter().max().unwrap()
+}
