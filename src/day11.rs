@@ -36,15 +36,13 @@ impl Floor {
         }
     }
 
-    fn neighbours(&self, (x, y): Pt) -> impl Iterator<Item=Pt> {
-        let width = self.width;
-        let height = self.height;
+    fn neighbours<'a>(&'a self, (x, y): Pt) -> impl Iterator<Item=Pt> + 'a {
         (-1..=1).flat_map(move |dx|
                     (-1..=1).map(move |dy| (x + dx, y + dy))
                )
                .filter(move |(c1, c2)| {
-                    (0..width).contains(c1)
-                    && (0..height).contains(c2)
+                    (0..self.width).contains(c1)
+                    && (0..self.height).contains(c2)
                     && (*c1, *c2) != (x,y)
                })
                .map(|(c1, c2)| (c1, c2))
@@ -61,15 +59,15 @@ impl Floor {
     }
 
     /* Could this return an iterator ? (borrows self ?) */
-    fn neighours_values(&self, coords: Pt) -> Vec<char> {
-        self.neighbours(coords).map(|xy| self.plan[&xy]).collect()
+    fn neighours_values<'a>(&'a self, coords: Pt) -> impl Iterator<Item=char> + 'a {
+        self.neighbours(coords).map(move |xy| self.plan[&xy])
     }
 
-    fn seats(&self, point: Pt) -> Vec<char> {
+    fn seats<'a>(&'a self, point: Pt) -> impl Iterator<Item=char> + 'a {
         let patterns = (-1..=1).flat_map(|x| (-1..=1).map(move |y| (x,y)));
 
         patterns.filter(|pt| *pt != (0, 0))
-                .map(|direction| {
+                .map(move |direction| {
             let mut seen: char = '.';
             let mut cursor = point;
             loop {
@@ -84,7 +82,7 @@ impl Floor {
                 }
             }
             seen
-        }).collect()
+        })
     }
 }
 
@@ -104,12 +102,10 @@ fn part1(floor: &Floor) -> usize {
         let mut new_floor = prev_floor.clone();
         new_floor.plan = prev_floor.plan.iter().map(|(&k,&v)| {
             if v == 'L' && prev_floor.neighours_values(k)
-                                     .iter()
-                                     .all(|&x| x == 'L' || x == '.') {
+                                     .all(|x| x == 'L' || x == '.') {
                 (k, '#')
             } else if v == '#' && prev_floor.neighours_values(k)
-                                            .iter()
-                                            .filter(|&x| *x == '#')
+                                            .filter(|&x| x == '#')
                                             .count() >= 4 {
                 (k, 'L')
             } else {
@@ -138,12 +134,10 @@ fn part2(floor: &Floor) -> usize {
         let mut new_floor = prev_floor.clone();
         new_floor.plan = prev_floor.plan.iter().map(|(&k,&v)| {
             if v == 'L' && prev_floor.seats(k)
-                                     .iter()
-                                     .all(|&x| x == 'L' || x == '.') {
+                                     .all(|x| x == 'L' || x == '.') {
                 (k, '#')
             } else if v == '#' && prev_floor.seats(k)
-                                            .iter()
-                                            .filter(|&x| *x == '#')
+                                            .filter(|x| *x == '#')
                                             .count() >= 5 {
                 (k, 'L')
             } else {
