@@ -4,7 +4,8 @@ type Move = (char, i64);
 
 struct Ship {
     position: Point,
-    orientation: usize
+    orientation: usize,
+    waypoint: Point,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -15,6 +16,18 @@ struct Point {
 impl Point {
     fn new(x: i64, y: i64) -> Point {
         Point{x, y}
+    }
+    fn rotate(&self, angle: i64) -> Point {
+        let by_quadrant = ((angle / 90) % 4 + 4) % 4;
+        if by_quadrant == 0 {
+            *self
+        } else if by_quadrant == 1 {
+            Point { x: self.y, y: -self.x }
+        } else if by_quadrant == 2 {
+            Point { x: -self.x, y: -self.y }
+        } else {
+            Point { x: -self.y, y: self.x }
+        }
     }
 }
 impl Add for Point {
@@ -50,7 +63,8 @@ impl Ship {
     fn new() -> Ship {
         Ship {
             position: Point::new(0,0),
-            orientation: 1
+            orientation: 1,
+            waypoint: Point::new(10, 1),
         }
     }
 
@@ -74,6 +88,22 @@ impl Ship {
         self.position = position;
         self.orientation = orientation;
     }
+
+    fn act2(&mut self, (action, value): Move) {
+        self.waypoint = match action {
+            'N' => self.waypoint + (NORTH * value),
+            'W' => self.waypoint + (WEST * value),
+            'E' => self.waypoint + (EAST * value),
+            'S' => self.waypoint + (SOUTH * value),
+            'F' => self.waypoint,
+            'L' => self.waypoint.rotate(-value),
+            'R' => self.waypoint.rotate(value),
+            _ => panic!("Unknown direction requested")
+        };
+        if action == 'F' {
+            self.position = self.position + (self.waypoint * value)
+        }
+    }
 }
 
 #[aoc_generator(day12)]
@@ -90,5 +120,12 @@ pub fn generator(input: &str) -> Vec<Move> {
 pub fn part1(input: &Vec<Move>) -> i64 {
     let mut ship = Ship::new();
     input.iter().for_each(|&action| ship.act(action));
+    ship.position.x.abs() + ship.position.y.abs()
+}
+
+#[aoc(day12, part2)]
+pub fn part2(input: &Vec<Move>) -> i64 {
+    let mut ship = Ship::new();
+    input.iter().for_each(|&action| ship.act2(action));
     ship.position.x.abs() + ship.position.y.abs()
 }
