@@ -14,18 +14,17 @@ pub fn generator(input: &str) -> (i64, Vec<i64>) {
 
 #[aoc_generator(day13, part2)]
 pub fn generator2(input: &str) -> Vec<(i64, i64)> {
-    let mut iter = input.lines();
+    let iter = input.lines();
     iter.skip(1).next().unwrap()
         .split(",")
         .enumerate()
-        .filter(|(i, x)| *x != "x")
+        .filter(|(_i, x)| *x != "x")
         .map(|(i, x)| (i as i64, x.parse::<i64>().unwrap()))
         .collect()
 }
 
 #[aoc(day13, part1)]
 pub fn part1(input: &(i64, Vec<i64>)) -> i64 {
-    println!("{:#?}", input);
     let (departure, buses) = input;
     let (delta, bus) = sorted(buses.iter().map(|x| {
         let loop_count = (departure / x) + 1;
@@ -69,14 +68,7 @@ fn chinese_remainder(residues: &[i64], modulii: &[i64]) -> Option<i64> {
 
 #[aoc(day13, part2)]
 pub fn part2(input: &Vec<(i64, i64)>) -> i64 {
-    println!("{:#?}", input);
-    let remainders = input.iter().map(|(i, x)| {
-        let mut r : i64 = *i;
-        while r > 0i64 {
-            r -= x
-        }
-        -r
-    }).collect::<Vec<i64>>();
+    let remainders = input.iter().map(|(i, x)| x - i).collect::<Vec<i64>>();
     let modulii = input.iter().map(|(_, x)| *x).collect::<Vec<i64>>();
     chinese_remainder(&remainders[..], &modulii[..]).unwrap()
 }
