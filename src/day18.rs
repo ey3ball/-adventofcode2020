@@ -78,12 +78,12 @@ pub fn apply(x: u64, op: char, y: u64) -> u64 {
     }
 }
 
-pub fn dfs(e: &Expr, s: &mut Vec<(u64, char)>, next_op: char) -> () {
+pub fn unroll(e: &Expr, s: &mut Vec<(u64, char)>, next_op: char) -> () {
     match e {
         Expr::Value(x) => s.push((*x, next_op)),
         Expr::Expr(x, op, y) => {
-            dfs(x, s, *op);
-            dfs(y, s, next_op);
+            unroll(x, s, *op);
+            unroll(y, s, next_op);
         },
         Expr::Eval(_) => {
             let value = eval(e);
@@ -98,20 +98,42 @@ pub fn compute(s: &Vec<(u64, char)>) -> u64 {
     }).0
 }
 
+pub fn compute2(s: &Vec<(u64, char)>) -> u64 {
+    let mut acc = 0;
+    let mut op = '+';
+    let mut mults: Vec<(u64, char)> = Vec::new();
+    for (val, next_op) in s.iter() {
+        if op == '+' {
+            acc = apply(acc, op, *val)
+        } else if op == '*' {
+            mults.push((acc, op));
+            acc = *val;
+        }
+        op = *next_op;
+    };
+    mults.push((acc, op));
+    mults.iter().fold((0, '+'), |(acc, op), (value, next_op)| {
+        (apply(acc, op, *value), *next_op)
+    }).0
+}
+
+
 pub fn eval(e: &Expr) -> u64 {
     match e {
         Expr::Value(x) => *x,
         Expr::Expr(_, _, _) => {
             let mut s: Vec<(u64, char)> = Vec::new();
-            dfs(e, &mut s, '=');
+            unroll(e, &mut s, '=');
             println!("{:#?}", s);
-            compute(&s)
+            compute2(&s)
         },
         Expr::Eval(wrapped) => {
             eval(wrapped)
         }
     }
 }
+
+
 
 #[aoc_generator(day18)]
 pub fn generator(input: &str) -> Vec<Expr> {
@@ -128,6 +150,14 @@ pub fn part1(input: &Vec<Expr>) -> u64 {
          .map(|e| eval(e))
          .sum()
 }
+
+#[aoc(day18, part2)]
+pub fn part2(input: &Vec<Expr>) -> u64 {
+    input.iter()
+         .map(|e| eval(e))
+         .sum()
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -186,9 +216,15 @@ mod tests {
         let parsed = operands(expr.as_bytes());
         println!("{:#?}", expr);
         println!("{:#?}", parsed);
-        assert_eq!(17, eval(&parsed));
+        assert_eq!(33, eval(&parsed));
 
         let expr = "1 + (2 * 3) + (3 * 5)".replace(" ", "");
+        let parsed = operands(expr.as_bytes());
+        println!("{:#?}", expr);
+        println!("{:#?}", parsed);
+        assert_eq!(22, eval(&parsed));
+
+        let expr = "".replace(" ", "");
         let parsed = operands(expr.as_bytes());
         println!("{:#?}", expr);
         println!("{:#?}", parsed);
