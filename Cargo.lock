@@ -46,6 +46,7 @@ dependencies = [
  "aoc-runner-derive",
  "counter",
  "itertools",
+ "lazy_static",
  "rayon",
  "regex",
 ]
