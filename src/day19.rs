@@ -5,8 +5,7 @@ use regex::Regex;
 pub enum Rule {
     Token(char),
     Or(Box<Rule>, Box<Rule>),
-    Chain(u64, u64),
-    Forward(u64),
+    Chain(Vec<u64>)
 }
 
 type Parsed = (HashMap<u64, Rule>, Vec<String>);
@@ -15,8 +14,7 @@ lazy_static! {
     static ref DEF_RULE: Regex = Regex::new("^([0-9]*): (.*)$").unwrap();
 
     static ref OR_RULE: Regex = Regex::new("^([0-9 ]+) [|] ([0-9 ]+)$").unwrap();
-    static ref CHAIN_RULE: Regex = Regex::new("^([0-9]+) ([0-9]+)$").unwrap();
-    static ref FORWARD_RULE: Regex = Regex::new("^([0-9]+)$").unwrap();
+    static ref CHAIN_RULE: Regex = Regex::new("([0-9]+)[ ]?").unwrap();
     static ref TOKEN_RULE: Regex = Regex::new("^[\"]([a-z])[\"]$").unwrap();
 }
 
@@ -24,15 +22,15 @@ fn decode(rule: &str) -> Rule {
     if OR_RULE.is_match(rule) {
         let captures = OR_RULE.captures(rule).unwrap();
         Rule::Or(Box::new(decode(&captures[1])), Box::new(decode(&captures[2])))
-    } else if CHAIN_RULE.is_match(rule) {
-        let captures = CHAIN_RULE.captures(rule).unwrap();
-        Rule::Chain(captures[1].parse().unwrap(), captures[2].parse().unwrap())
-    } else if FORWARD_RULE.is_match(rule) {
-        Rule::Forward(rule.parse().unwrap())
     } else if TOKEN_RULE.is_match(rule) {
         Rule::Token(rule.chars().nth(1).unwrap())
     } else {
-        panic!("Parse Error for {}", rule)
+        Rule::Chain(
+            CHAIN_RULE
+                .captures_iter(rule)
+                .map(|c| c[1].parse().unwrap())
+                .collect()
+        )
     }
 }
 
@@ -43,22 +41,22 @@ fn matches(input: &str, rule: &Rule, rules: &HashMap<u64, Rule>) -> usize {
             std::cmp::max(
                 matches(input, left, rules), matches(input, right, rules)
             ),
-        Rule::Chain(first, then) => {
-            let count = matches(input, &rules[first], rules);
-            if count != 0 {
-                let count2 = matches(&input[count..], &rules[then], rules);
-                if count2 != 0 {
-                    count + count2
-                } else {
-                    0
-                }
+        Rule::Chain(ids) => {
+            let res = ids.iter()
+               .try_fold(0, |acc, id| {
+                    let count = matches(&input[acc..], &rules[id], rules);
+                    if count != 0 {
+                        Some(acc + count)
+                    } else {
+                        None
+                    }
+               });
+            if let Some(count) = res {
+                count
             } else {
                 0
             }
-        },
-        Rule::Forward(next) => {
-            matches(input, &rules[next], rules)
-        },
+        }
     }
 }
 
@@ -98,8 +96,7 @@ mod tests {
     #[test]
     fn rules() {
         let test = concat!(
-            r#"0: 4 6"#, "\n",
-            r#"6: 1 5"#, "\n",
+            r#"0: 4 1 5"#, "\n",
             r#"1: 2 3 | 3 2"#, "\n",
             r#"2: 4 4 | 5 5"#, "\n",
             r#"3: 4 5 | 5 4"#, "\n",
