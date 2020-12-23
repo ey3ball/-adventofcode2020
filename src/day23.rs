@@ -1,3 +1,7 @@
+use std::collections::LinkedList;
+use std::collections::HashMap;
+use itertools::Itertools;
+
 #[aoc_generator(day23)]
 pub fn generator(input: &str) -> Vec<i64> {
     input.chars()
@@ -70,21 +74,44 @@ pub fn crabby_move(moves: u64, input: &Vec<i64>) -> Vec<i64> {
     cups
 }
 
-pub fn crabby_move_fast(moves: u64, input: &Vec<i64>) -> Vec<i64> {
+pub fn follow(mut front: i64, circle: &HashMap<i64, i64>) {
+    let n: i64 = circle.len() as i64;
+
+    let mut i = 0;
+    print!("{}, ", front);
+    while i <= n {
+        let next = circle[&front];
+        print!("{}, ", next);
+        front = next;
+
+        i = i + 1
+    }
+    println!("");
+}
+
+pub fn crabby_move_fast(moves: u64, input: &Vec<i64>) -> HashMap<i64, i64> {
     let n: i64 = input.len() as i64;
-    let mut cups: LinkedList<i64> = input.iter().copied().collect();
+
+    let mut circle: HashMap<i64, i64> = input.iter()
+        .tuple_windows()
+        .map(|(x, next)| (*x, *next))
+        .collect();
+    let mut front = *input.iter().next().unwrap();
+    let back = *input.iter().rev().next().unwrap();
+    circle.insert(back, front);
 
     let mut mv = 1;
     while mv <= moves {
-        println!("\nmove: {}", mv);
+        //println!("\nmove: {}", mv);
 
-        // println!("cups: {}", format!("{:#?}", cups).replace("\n", ""));
-        let cur_label = cups.pop_front().unwrap();
-        let picked_up = [
-            cups.pop_front().unwrap(),   
-            cups.pop_front().unwrap(),   
-            cups.pop_front().unwrap(),   
-        ];
+        //println!("cups: ");
+        //follow(front, &circle);
+        let cur_label = front;
+        let mut picked_up = Vec::new();
+        picked_up.push(circle[&front]);
+        picked_up.push(circle[picked_up.last().unwrap()]);
+        picked_up.push(circle[picked_up.last().unwrap()]);
+        let new_front = circle[picked_up.last().unwrap()];
         // println!("picked up: {}", format!("{:#?}", picked_up).replace("\n", ""));
 
         let mut dest = cur_label + n;
@@ -98,28 +125,30 @@ pub fn crabby_move_fast(moves: u64, input: &Vec<i64>) -> Vec<i64> {
         // println!("destination: {}", dest);
 
         /* Find out where to insert picked up digits and insert them back */
-        let dest_idx = cups.iter()
-            .enumerate()
-            .find(|(_i,v)| **v == dest)
-            .unwrap().0;
-        let mut back = cups.split_off(dest_idx + 1);
+        //let dest_idx = cups.iter()
+        //    .enumerate()
+        //    .find(|(_i,v)| **v == dest)
+        //    .unwrap().0;
+        let dest_next = circle[&dest];
 
-        back.push_front(picked_up[2]);
-        back.push_front(picked_up[1]);
-        back.push_front(picked_up[0]);
+        circle.insert(picked_up.pop().unwrap(), dest_next);
+        picked_up.pop();
+        circle.insert(dest, picked_up.pop().unwrap());
+        circle.insert(front, new_front);
 
-        cups.append(&mut back);
-        cups.push_back(cur_label);
+        front = new_front;
 
         mv += 1;
     };
+    //println!("cups: ");
+    //follow(front, &circle);
 
-    cups.iter().copied().collect()
+    circle
 }
 
 #[aoc(day23, part1)]
 pub fn part1(input: &Vec<i64>) -> i64 {
-    let cups = crabby_move_fast(100, input);
+    let cups = crabby_move(100, input);
 
     let final_idx = cups.iter()
         .enumerate()
@@ -137,26 +166,15 @@ pub fn part1(input: &Vec<i64>) -> i64 {
 
 #[aoc(day23, part2)]
 pub fn part2(input: &Vec<i64>) -> i64 {
-    let mut cups = [
+    let cups = [
         input.clone(),
-        (input.len()+1..=1000000-input.len()).map(|x| x as i64).collect()
+        (input.len()+1..=1000000).map(|x| x as i64).collect()
     ].concat();
 
-    cups = crabby_move_fast(10000000, &cups);
+    let circle = crabby_move_fast(10000000, &cups);
 
-    let final_idx = cups.iter()
-        .enumerate()
-        .find(|(_i, v)| **v == 1)
-        .unwrap().0;
+    let next = circle[&1];
+    let next2 = circle[&next];
 
-    println!("{}", final_idx);
-    let clockwise: Vec<i64> = cups.iter()
-        .cycle()
-        .skip(final_idx + 1)
-        .take(2)
-        .copied()
-        .collect();
-
-    println!("{} {}", clockwise[0], clockwise[1]);
-    0
+    next * next2
 }
