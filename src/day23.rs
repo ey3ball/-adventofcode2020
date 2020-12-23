@@ -7,14 +7,13 @@ pub fn generator(input: &str) -> Vec<i64> {
         .collect()
 }
 
-#[aoc(day23, part1)]
-pub fn part1(input: &Vec<i64>) -> i64 {
+pub fn crabby_move(moves: u64, input: &Vec<i64>) -> Vec<i64> {
     let n: i64 = input.len() as i64;
     let mut cups = input.clone();
     let mut cur_idx = 0;
 
     let mut mv = 1;
-    while mv <= 100 {
+    while mv <= moves {
         println!("\nmove: {}", mv);
         println!("cups: {}", format!("{:#?}", cups).replace("\n", ""));
         let cur_label = cups[cur_idx];
@@ -68,6 +67,13 @@ pub fn part1(input: &Vec<i64>) -> i64 {
         cur_idx = (cur_idx + 1) % input.len();
     };
 
+    cups
+}
+
+#[aoc(day23, part1)]
+pub fn part1(input: &Vec<i64>) -> i64 {
+    let cups = crabby_move(100, input);
+
     let final_idx = cups.iter()
         .enumerate()
         .find(|(_i, v)| **v == 1)
@@ -80,4 +86,29 @@ pub fn part1(input: &Vec<i64>) -> i64 {
         .map(|&d| std::char::from_digit(d as u32, 10).unwrap())
         .collect::<String>()
         .parse().unwrap()
+}
+
+#[aoc(day23, part2)]
+pub fn part2(input: &Vec<i64>) -> i64 {
+    let mut cups = [
+        input.clone(),
+        (input.len()+1..1000000).map(|x| x as i64).collect()
+    ].concat();
+
+    cups = crabby_move(10000000, input);
+
+    let final_idx = cups.iter()
+        .enumerate()
+        .find(|(_i, v)| **v == 1)
+        .unwrap().0;
+
+    let clockwise: Vec<i64> = cups.iter()
+        .cycle()
+        .skip(final_idx + 1)
+        .take(2)
+        .copied()
+        .collect();
+
+    println!("{} {}", clockwise[0], clockwise[1]);
+    0
 }
