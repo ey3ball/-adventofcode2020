@@ -4,18 +4,22 @@ use itertools::sorted;
 pub fn generator(input: &str) -> (i64, Vec<i64>) {
     let mut iter = input.lines();
     let departure = iter.next().unwrap().parse::<u32>().unwrap() as i64;
-    let buses = iter.next().unwrap()
-                    .split(",")
-                    .filter(|&x| x != "x")
-                    .map(|x| x.parse::<i64>().unwrap())
-                    .collect();
+    let buses = iter
+        .next()
+        .unwrap()
+        .split(",")
+        .filter(|&x| x != "x")
+        .map(|x| x.parse::<i64>().unwrap())
+        .collect();
     (departure, buses)
 }
 
 #[aoc_generator(day13, part2)]
 pub fn generator2(input: &str) -> Vec<(i64, i64)> {
     let iter = input.lines();
-    iter.skip(1).next().unwrap()
+    iter.skip(1)
+        .next()
+        .unwrap()
         .split(",")
         .enumerate()
         .filter(|(_i, x)| *x != "x")
@@ -30,7 +34,9 @@ pub fn part1(input: &(i64, Vec<i64>)) -> i64 {
         let loop_count = (departure / x) + 1;
         let timedelta = (loop_count * x) - departure;
         (timedelta, x)
-    })).next().unwrap();
+    }))
+    .next()
+    .unwrap();
     delta * bus
 }
 

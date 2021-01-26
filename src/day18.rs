@@ -1,5 +1,5 @@
-use std::str;
 use regex::Regex;
+use std::str;
 
 #[derive(Debug, PartialEq)]
 pub enum Expr {
@@ -10,24 +10,32 @@ pub enum Expr {
 
 pub fn expression_str(math: &[u8]) -> (bool, &[u8], &[u8]) {
     let (precedence, start, end) = if math[0] == '(' as u8 {
-        let end = math[1..].iter().scan(1, |state, &x| {
-            if x == ')' as u8 {
-                *state = *state - 1;
-            } else if x == '(' as u8 {
-                *state = *state + 1;
-            }
+        let end = math[1..]
+            .iter()
+            .scan(1, |state, &x| {
+                if x == ')' as u8 {
+                    *state = *state - 1;
+                } else if x == '(' as u8 {
+                    *state = *state + 1;
+                }
 
-            if *state == 0 {
-                None
-            } else {
-                Some(x)
-            }
-        }).count() + 1;
+                if *state == 0 {
+                    None
+                } else {
+                    Some(x)
+                }
+            })
+            .count()
+            + 1;
         (true, 1, end)
     } else {
-        (false, 0, math.iter()
-            .position(|x| ['+' as u8, '*' as u8].contains(x))
-            .unwrap_or(math.iter().count()))
+        (
+            false,
+            0,
+            math.iter()
+                .position(|x| ['+' as u8, '*' as u8].contains(x))
+                .unwrap_or(math.iter().count()),
+        )
     };
     let expr = &math[start..end];
     let rest = &math[end..];
@@ -40,8 +48,11 @@ pub fn expression_str(math: &[u8]) -> (bool, &[u8], &[u8]) {
 }
 
 pub fn operands(math: &[u8]) -> Expr {
-    if !math.iter().any(|x| [')' as u8, '+' as u8, '*' as u8].contains(x)) {
-        return Expr::Value(str::from_utf8(math).unwrap().parse().unwrap())
+    if !math
+        .iter()
+        .any(|x| [')' as u8, '+' as u8, '*' as u8].contains(x))
+    {
+        return Expr::Value(str::from_utf8(math).unwrap().parse().unwrap());
     }
 
     let (precedence, arg1, rest) = expression_str(math);
@@ -51,17 +62,15 @@ pub fn operands(math: &[u8]) -> Expr {
         operands(arg1)
     };
 
-    let operator_at = rest
-        .iter()
-        .position(|x| ['+' as u8, '*' as u8].contains(x));
+    let operator_at = rest.iter().position(|x| ['+' as u8, '*' as u8].contains(x));
     if let Some(pos) = operator_at {
         let operator = &rest[..=pos];
-        let arg2 = &rest[pos+1..];
+        let arg2 = &rest[pos + 1..];
 
         Expr::Expr(
             Box::new(e1),
             *operator.iter().next().unwrap() as char,
-            Box::new(operands(arg2))
+            Box::new(operands(arg2)),
         )
     } else {
         e1
@@ -84,7 +93,7 @@ pub fn unroll(e: &Expr, s: &mut Vec<(u64, char)>, next_op: char) -> () {
         Expr::Expr(x, op, y) => {
             unroll(x, s, *op);
             unroll(y, s, next_op);
-        },
+        }
         Expr::Eval(_) => {
             let value = eval(e);
             s.push((value, next_op))
@@ -93,9 +102,11 @@ pub fn unroll(e: &Expr, s: &mut Vec<(u64, char)>, next_op: char) -> () {
 }
 
 pub fn compute(s: &Vec<(u64, char)>) -> u64 {
-    s.iter().fold((0, '+'), |(acc, op), (value, next_op)| {
-        (apply(acc, op, *value), *next_op)
-    }).0
+    s.iter()
+        .fold((0, '+'), |(acc, op), (value, next_op)| {
+            (apply(acc, op, *value), *next_op)
+        })
+        .0
 }
 
 pub fn compute2(s: &Vec<(u64, char)>) -> u64 {
@@ -110,13 +121,15 @@ pub fn compute2(s: &Vec<(u64, char)>) -> u64 {
             acc = *val;
         }
         op = *next_op;
-    };
+    }
     mults.push((acc, op));
-    mults.iter().fold((0, '+'), |(acc, op), (value, next_op)| {
-        (apply(acc, op, *value), *next_op)
-    }).0
+    mults
+        .iter()
+        .fold((0, '+'), |(acc, op), (value, next_op)| {
+            (apply(acc, op, *value), *next_op)
+        })
+        .0
 }
-
 
 pub fn eval(e: &Expr) -> u64 {
     match e {
@@ -126,38 +139,28 @@ pub fn eval(e: &Expr) -> u64 {
             unroll(e, &mut s, '=');
             println!("{:#?}", s);
             compute2(&s)
-        },
-        Expr::Eval(wrapped) => {
-            eval(wrapped)
         }
+        Expr::Eval(wrapped) => eval(wrapped),
     }
 }
 
-
-
 #[aoc_generator(day18)]
 pub fn generator(input: &str) -> Vec<Expr> {
-    input.lines()
-         .map(|l| {
-            operands(l.replace(" ", "").as_bytes())
-         })
-         .collect()
+    input
+        .lines()
+        .map(|l| operands(l.replace(" ", "").as_bytes()))
+        .collect()
 }
 
 #[aoc(day18, part1)]
 pub fn part1(input: &Vec<Expr>) -> u64 {
-    input.iter()
-         .map(|e| eval(e))
-         .sum()
+    input.iter().map(|e| eval(e)).sum()
 }
 
 #[aoc(day18, part2)]
 pub fn part2(input: &Vec<Expr>) -> u64 {
-    input.iter()
-         .map(|e| eval(e))
-         .sum()
+    input.iter().map(|e| eval(e)).sum()
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -172,7 +175,6 @@ mod tests {
         //    parsed,
         //    Expr::Value(4)
         //);
-
 
         //let expr = "2".replace(" ", "");
         //let parsed = operands(expr.as_bytes());

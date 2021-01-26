@@ -14,7 +14,7 @@ pub fn part1(expenses: &Vec<u32>) -> u32 {
             }
         }
     }
-    return 0
+    return 0;
 }
 
 #[aoc(day1, part2)]
@@ -23,28 +23,32 @@ pub fn part2(expenses: &Vec<u32>) -> u32 {
         for (j, n2) in expenses.iter().enumerate().skip(i + 1) {
             for n3 in expenses.iter().skip(j) {
                 if n1 + n2 + n3 == 2020 {
-                    return n1 * n2 * n3
+                    return n1 * n2 * n3;
                 }
             }
         }
     }
-    return 0
+    return 0;
 }
 
 #[aoc(day1, part1, itertools)]
 pub fn part1_iter(expenses: &Vec<u32>) -> u32 {
-    expenses.iter().tuple_combinations()
-                   .filter(|(&n1,&n2)| n1 + n2 == 2020)
-                   .map(|(n1, n2)| n1 * n2)
-                   .next()
-                   .unwrap()
+    expenses
+        .iter()
+        .tuple_combinations()
+        .filter(|(&n1, &n2)| n1 + n2 == 2020)
+        .map(|(n1, n2)| n1 * n2)
+        .next()
+        .unwrap()
 }
 
 #[aoc(day1, part2, itertools)]
 pub fn part2_iter(expenses: &Vec<u32>) -> u32 {
-    expenses.iter().tuple_combinations()
-                   .filter(|(&n1,&n2,&n3)| n1 + n2 + n3 == 2020)
-                   .map(|(&n1,&n2,&n3)| n1 * n2 * n3)
-                   .next()
-                   .unwrap()
+    expenses
+        .iter()
+        .tuple_combinations()
+        .filter(|(&n1, &n2, &n3)| n1 + n2 + n3 == 2020)
+        .map(|(&n1, &n2, &n3)| n1 * n2 * n3)
+        .next()
+        .unwrap()
 }

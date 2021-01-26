@@ -5,14 +5,13 @@ struct Console<'a> {
     program: &'a Vec<Instruction>,
 
     acc: i32,
-    pc: usize
+    pc: usize,
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Instruction {
     opcode: String,
-    arg: i32
+    arg: i32,
 }
 
 impl<'a> Console<'a> {
@@ -20,7 +19,7 @@ impl<'a> Console<'a> {
         Console {
             program,
             acc: 0,
-            pc: 0
+            pc: 0,
         }
     }
 
@@ -32,12 +31,8 @@ impl<'a> Console<'a> {
 
             let prev_pc = self.pc;
             match inst.opcode.as_str() {
-                "nop" => {
-                    self.pc += 1
-                }
-                "jmp" => {
-                    self.pc = (self.pc as i32 + inst.arg) as usize
-                }
+                "nop" => self.pc += 1,
+                "jmp" => self.pc = (self.pc as i32 + inst.arg) as usize,
                 "acc" => {
                     self.acc = self.acc + inst.arg;
                     self.pc += 1
@@ -50,32 +45,35 @@ impl<'a> Console<'a> {
 
             if visited.contains(&self.pc) {
                 // println!("Reached already visited instruction {}", self.pc);
-                return (false, self.acc)
+                return (false, self.acc);
             }
 
             if self.pc == self.program.len() {
                 // println!("Program terminates {} {}", self.pc, self.acc);
-                return (true, self.acc)
+                return (true, self.acc);
             } else if self.pc > self.program.len() {
                 println!("Buggy program");
-                return (false, self.acc)
+                return (false, self.acc);
             }
         }
     }
 }
 
 pub fn parse(input: &str) -> Vec<Instruction> {
-    input.lines().map(|x| {
-        let tokens = &x.split(" ").collect::<Vec<&str>>()[..];
-        if let &[opcode, arg] = tokens {
-            Instruction {
-                opcode: opcode.to_owned(),
-                arg: arg.parse().unwrap()
+    input
+        .lines()
+        .map(|x| {
+            let tokens = &x.split(" ").collect::<Vec<&str>>()[..];
+            if let &[opcode, arg] = tokens {
+                Instruction {
+                    opcode: opcode.to_owned(),
+                    arg: arg.parse().unwrap(),
+                }
+            } else {
+                panic!("Cannot parse")
             }
-        } else {
-            panic!("Cannot parse")
-        }
-    }).collect()
+        })
+        .collect()
 }
 
 #[aoc(day8, part1)]
@@ -92,9 +90,10 @@ pub fn part2(raw: &str) -> i32 {
     let mut edited = program.clone();
 
     for (i, instruction) in program
-                                .iter()
-                                .enumerate()
-                                .filter(|(_i, inst)| inst.opcode != "acc") {
+        .iter()
+        .enumerate()
+        .filter(|(_i, inst)| inst.opcode != "acc")
+    {
         let mut hack = instruction.clone();
         if instruction.opcode == "jmp" {
             hack.opcode = "nop".to_owned()
@@ -109,7 +108,7 @@ pub fn part2(raw: &str) -> i32 {
         let mut console = Console::new(&edited);
         if let (true, acc) = console.debug() {
             /* Program correctly halted ! */
-            return acc
+            return acc;
         }
         /* Infinite loop detected, try again */
         edited[i] = instruction.clone();

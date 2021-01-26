@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use regex::Regex;
+use std::collections::HashMap;
 
 #[aoc_generator(day4)]
 pub fn generator(input: &str) -> Vec<HashMap<String, String>> {
@@ -12,11 +12,18 @@ pub fn generator(input: &str) -> Vec<HashMap<String, String>> {
             continue;
         }
 
-        line.split(" ").map(|x| {
-            let mut split2 = x.splitn(2, ":");
-            (split2.next().unwrap().to_owned(),
-             split2.next().unwrap().to_owned())
-        }).for_each(|(k,v)| {dict.insert(k, v); ()});
+        line.split(" ")
+            .map(|x| {
+                let mut split2 = x.splitn(2, ":");
+                (
+                    split2.next().unwrap().to_owned(),
+                    split2.next().unwrap().to_owned(),
+                )
+            })
+            .for_each(|(k, v)| {
+                dict.insert(k, v);
+                ()
+            });
     }
     list.push(dict);
     list
@@ -24,9 +31,7 @@ pub fn generator(input: &str) -> Vec<HashMap<String, String>> {
 
 fn has_required_fields(passport: &&HashMap<String, String>) -> bool {
     (passport.keys().count() == 8)
-    || ((passport.keys().count() == 7)
-            && passport.keys().find(|y| **y == "cid").is_none()
-    )
+        || ((passport.keys().count() == 7) && passport.keys().find(|y| **y == "cid").is_none())
 }
 
 fn check_digits(input: &str, min: usize, max: usize) -> bool {
@@ -46,7 +51,7 @@ fn check_height(input: &str) -> bool {
         match captures[2].as_ref() {
             "cm" => height >= 150 && height <= 193,
             "in" => height >= 59 && height <= 76,
-            _ => false
+            _ => false,
         }
     } else {
         false
@@ -59,7 +64,7 @@ fn check_hair(input: &str) -> bool {
 }
 
 fn check_eyes(input: &str) -> bool {
-    vec!["amb", "blu", "brn", "gry", "grn", "hzl" ,"oth"].contains(&input)
+    vec!["amb", "blu", "brn", "gry", "grn", "hzl", "oth"].contains(&input)
 }
 
 fn check_pid(input: &str) -> bool {
@@ -90,7 +95,8 @@ pub fn part2(input: &Vec<HashMap<String, String>>) -> usize {
     assert!(!check_pid("12345678"));
     assert!(check_pid("123456789"));
 
-    input.iter()
+    input
+        .iter()
         .filter(has_required_fields)
         .filter(|x| check_digits(&x["byr"], 1920, 2002))
         .filter(|x| check_digits(&x["iyr"], 2010, 2020))

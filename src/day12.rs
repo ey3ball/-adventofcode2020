@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub, Mul};
+use std::ops::{Add, Mul, Sub};
 
 type Move = (char, i64);
 
@@ -15,18 +15,27 @@ struct Point {
 }
 impl Point {
     fn new(x: i64, y: i64) -> Point {
-        Point{x, y}
+        Point { x, y }
     }
     fn rotate(&self, angle: i64) -> Point {
         let by_quadrant = ((angle / 90) % 4 + 4) % 4;
         if by_quadrant == 0 {
             *self
         } else if by_quadrant == 1 {
-            Point { x: self.y, y: -self.x }
+            Point {
+                x: self.y,
+                y: -self.x,
+            }
         } else if by_quadrant == 2 {
-            Point { x: -self.x, y: -self.y }
+            Point {
+                x: -self.x,
+                y: -self.y,
+            }
         } else {
-            Point { x: -self.y, y: self.x }
+            Point {
+                x: -self.y,
+                y: self.x,
+            }
         }
     }
 }
@@ -34,21 +43,30 @@ impl Add for Point {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
-        Self {x: self.x + other.x, y: self.y + other.y}
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
     }
 }
 impl Sub for Point {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
-        Self {x: self.x - other.x, y: self.y - other.y}
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+        }
     }
 }
 impl Mul<i64> for Point {
     type Output = Self;
 
     fn mul(self, other: i64) -> Self {
-        Self {x: self.x*other, y: self.y*other}
+        Self {
+            x: self.x * other,
+            y: self.y * other,
+        }
     }
 }
 
@@ -62,7 +80,7 @@ const DIRECTIONS: [Point; 4] = [NORTH, EAST, SOUTH, WEST];
 impl Ship {
     fn new() -> Ship {
         Ship {
-            position: Point::new(0,0),
+            position: Point::new(0, 0),
             orientation: 1,
             waypoint: Point::new(10, 1),
         }
@@ -77,12 +95,12 @@ impl Ship {
             'F' => DIRECTIONS[self.orientation] * value,
             'L' => STANDBY,
             'R' => STANDBY,
-            _ => panic!("Unknown direction requested")
+            _ => panic!("Unknown direction requested"),
         };
         let orientation = match action {
             'L' => ((((self.orientation + 4) as i64) - value / 90) % 4) as usize,
             'R' => ((self.orientation as i64 + value / 90) % 4) as usize,
-            _ => self.orientation as usize
+            _ => self.orientation as usize,
         };
         let position = self.position + displacement;
         self.position = position;
@@ -98,7 +116,7 @@ impl Ship {
             'F' => self.waypoint,
             'L' => self.waypoint.rotate(-value),
             'R' => self.waypoint.rotate(value),
-            _ => panic!("Unknown direction requested")
+            _ => panic!("Unknown direction requested"),
         };
         if action == 'F' {
             self.position = self.position + (self.waypoint * value)
@@ -108,13 +126,15 @@ impl Ship {
 
 #[aoc_generator(day12)]
 pub fn generator(input: &str) -> Vec<Move> {
-    input.lines().map(|l| {
-        let direction = l.chars().next().unwrap();
-        let value = l[1..].parse::<i64>().unwrap();
-        (direction, value)
-    }).collect()
+    input
+        .lines()
+        .map(|l| {
+            let direction = l.chars().next().unwrap();
+            let value = l[1..].parse::<i64>().unwrap();
+            (direction, value)
+        })
+        .collect()
 }
-
 
 #[aoc(day12, part1)]
 pub fn part1(input: &Vec<Move>) -> i64 {
