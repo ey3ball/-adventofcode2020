@@ -1,103 +1,122 @@
 use regex::Regex;
 use std::collections::HashMap;
 
-type Inst = (char, u64, u64);
-type Inst2 = (String, u64, u64);
-
-#[aoc_generator(day14, part1)]
-pub fn generator(input: &str) -> Vec<Inst> {
-    let re_bitmask = Regex::new(r"^mask = (?P<bitmask>[X0-1]*)$").unwrap();
-    let re_memory = Regex::new(r"^mem.(?P<addr>[0-9]*). = (?P<value>[0-9]*)$").unwrap();
-
-    input.lines().map(|x|
-        if re_bitmask.is_match(x) {
-            let mask = re_bitmask.captures(x).unwrap();
-            let and = u64::from_str_radix(
-                &mask.name("bitmask").unwrap().as_str().replace("X", "1"),
-                2
-            ).unwrap();
-            let or = u64::from_str_radix(
-                &mask.name("bitmask").unwrap().as_str().replace("X", "0"),
-                2
-            ).unwrap();
-            ('X', and, or)
-        } else {
-            let mem = re_memory.captures(x).unwrap();
-            ('M', mem.name("addr").unwrap().as_str().parse().unwrap(),
-                  mem.name("value").unwrap().as_str().parse().unwrap()
-            )
-        }
-    ).collect()
+pub enum Op {
+    Masks(u64, u64, u64),
+    Assign(u64, u64),
 }
 
-#[aoc_generator(day14, part2)]
-pub fn generator2(input: &str) -> Vec<Inst2> {
+#[aoc_generator(day14)]
+pub fn generator(input: &str) -> Vec<Op> {
     let re_bitmask = Regex::new(r"^mask = (?P<bitmask>[X0-1]*)$").unwrap();
     let re_memory = Regex::new(r"^mem.(?P<addr>[0-9]*). = (?P<value>[0-9]*)$").unwrap();
 
-    input.lines().map(|x|
-        if re_bitmask.is_match(x) {
-            let mask = re_bitmask.captures(x).unwrap().name("bitmask").unwrap().as_str().to_owned();
-            (mask, 0, 0)
-        } else {
-            let mem = re_memory.captures(x).unwrap();
-            ("M".to_owned(), mem.name("addr").unwrap().as_str().parse().unwrap(),
-                  mem.name("value").unwrap().as_str().parse().unwrap()
-            )
-        }
-    ).collect()
+    input
+        .lines()
+        .map(|x| {
+            if re_bitmask.is_match(x) {
+                let weird_mask = re_bitmask
+                    .captures(x)
+                    .and_then(|c| c.name("bitmask").map(|b| b.as_str()))
+                    .unwrap();
+                let and = u64::from_str_radix(&weird_mask.replace("X", "1"), 2).unwrap();
+                let or = u64::from_str_radix(&weird_mask.replace("X", "0"), 2).unwrap();
+                let flip = u64::from_str_radix(&weird_mask.replace("1", "0").replace("X", "1"), 2)
+                    .unwrap();
+                Op::Masks(and, or, flip)
+            } else {
+                let mem = re_memory.captures(x).unwrap();
+                Op::Assign(
+                    mem.name("addr")
+                        .and_then(|a| a.as_str().parse().ok())
+                        .unwrap(),
+                    mem.name("value")
+                        .and_then(|v| v.as_str().parse().ok())
+                        .unwrap(),
+                )
+            }
+        })
+        .collect()
 }
 
 #[aoc(day14, part1)]
-fn part1(input: &Vec<Inst>) -> u64 {
+fn part1(input: &Vec<Op>) -> u64 {
     let mut mem: HashMap<u64, u64> = HashMap::new();
 
-    let (_, and, or) = input.iter().next().unwrap();
+    let mut mask = input.iter().next().unwrap();
 
-    let res = input.iter().skip(1)
-         .fold((and, or), |(and, or), (t, a1, a2)| {
-        if *t == 'X' {
-            (a1, a2)
+    input.iter().skip(1).for_each(|mem_op| {
+        if let Op::Masks(and_mask, or_mask, _) = mask {
+            match mem_op {
+                Op::Masks(_, _, _) => {
+                    mask = mem_op;
+                }
+                Op::Assign(addr, value) => {
+                    mem.insert(*addr, (value & and_mask) | or_mask);
+                }
+            }
         } else {
-            mem.insert(*a1, (a2 & and) | or);
-            (and, or)
+            panic!()
         }
     });
-    mem.iter().map(|(_k,&v)| v).sum()
+    mem.iter().map(|(_k, &v)| v).sum()
 }
 
 #[aoc(day14, part2)]
-fn part2(input: &Vec<Inst2>) -> u64 {
+fn part2(input: &Vec<Op>) -> u64 {
     let mut mem: HashMap<u64, u64> = HashMap::new();
 
-    let (mask, _, _) = input.iter().next().unwrap();
+    let mut mask = input.iter().next().unwrap();
 
-    let res = input.iter().skip(1)
-         .fold(mask, |mask, (t, a1, a2)| {
-            if t == "M" {
-                let positions: Vec<u64> = mask.bytes().enumerate().filter_map(|(i, x)| {
-                    if x == 'X' as u8 {
-                        Some(i as u64)
-                    } else {
-                        None
-                    }
-                }).collect();
-                let count = positions.len();
-                let addresses = (0..1 << count).map(
-                    |i| {
-                        let mut bin: Vec<u8> = mask.bytes().collect();
-                        for (n, p) in positions.iter().enumerate() {
-                            bin[*p as usize] = ((i >> n) & 0x01) as u8 + '0' as u8
-                        }
-                        u64::from_str_radix(String::from_utf8(bin).unwrap().as_str(), 2).unwrap()
-                    }
-                );
-                let bitmask = !addresses.clone().last().unwrap();
-                addresses.for_each(|x| {mem.insert(a1 & bitmask | x, *a2);});
-                mask
-            } else {
-                t
+    input.iter().skip(1).for_each(|mem_op| {
+        if let Op::Masks(_, or_mask, flip_mask) = mask {
+            match mem_op {
+                Op::Masks(_, _, _) => {
+                    mask = mem_op;
+                }
+                Op::Assign(addr, value) => {
+                    let base_addr = (addr | or_mask) & !flip_mask;
+                    let decoded = decode(*flip_mask);
+
+                    decoded.iter().for_each(|dec| {
+                        mem.insert(base_addr | dec, *value);
+                    });
+                }
             }
+        } else {
+            panic!()
+        }
     });
-    mem.iter().map(|(_k,&v)| v).sum()
+    mem.iter().map(|(_k, &v)| v).sum()
+}
+
+fn decode(mut flip_mask: u64) -> Vec<u64> {
+    let mut addresses: Vec<u64> = vec![flip_mask];
+
+    while flip_mask != 0 {
+        let lowest = flip_mask & (!flip_mask + 1);
+
+        addresses.append(&mut addresses.iter().map(|a| a & !lowest).collect());
+        flip_mask &= !lowest;
+    }
+    addresses
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_decode_center() {
+        let flip_mask = 0b0110u64;
+        let addresses = decode(flip_mask);
+        assert_eq!(addresses, vec![0b0110u64, 0b0100u64, 0b0010u64, 0b0000u64]);
+    }
+
+    #[test]
+    fn test_decode_edge() {
+        let flip_mask = 0b1001u64;
+        let addresses = decode(flip_mask);
+        assert_eq!(addresses, vec![0b1001u64, 0b1000u64, 0b0001u64, 0b0000u64]);
+    }
 }
